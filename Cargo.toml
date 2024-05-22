@@ -1,0 +1,11 @@
+[package]
+name = "tradeanalyzer-backend"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+actix-web = "4.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1", features = ["full"] }
+csv = "1.1"
