@@ -1,1 +1,36 @@
-This repository contains the main Rust file for a backend service designed around the Actix-web framework. The service features an HTTP server configured to listen on port 8080, catering to a variety of specific functionalities. It's structured to efficiently handle file uploads, allowing users to submit data directly to the server. Additionally, it incorporates routes explicitly designed for processing trade data, enabling the system to manipulate and analyze financial information as required. Finally, this backend service is equipped to provide users with analyzed results, deriving insightful conclusions from the processed data. This setup is ideal for applications needing robust data processing and analysis capabilities with a focus on financial or trading data.
+### TradeAnalyzer
+
+## Overview
+TradeAnalyzer is a web application designed to analyze high-frequency trading data, providing real-time analytics and insights. The project uses Rust for the backend and JavaScript for the frontend.
+
+## Setup
+
+### Prerequisites
+- **Node.js** (v14+)
+- **Rust** (1.56+)
+- **Cargo**
+
+### Frontend
+1. **Install dependencies:**
+   ```bash
+   cd TradeAnalyzer/frontend
+   npm install
+   ```
+
+2. **Start the development server:**
+   ```bash
+   npm start
+   ```
+
+### Backend
+1. **Build and run the server:**
+   ```bash
+   cd TradeAnalyzer/backend
+   cargo run
+   ```
+
+### Access the Application
+- Open your browser and navigate to `http://localhost:3000`
+
+## Contributing
+Fork the repository, make your changes, and create a pull request.
