@@ -1,5 +1,5 @@
-use actix_web::{web, App, HttpResponse, HttpServer, Responder};
-use serde::Deserialize;
+use actix_web::{web, App, HttpResponse, HttpServer, Responder, http::StatusCode};
+use serde::{Deserialize, Serialize};
 use std::env;
 
 #[derive(Deserialize)]
@@ -7,6 +7,15 @@ struct TradeData {
     trade_id: String,
     trade_amount: f32,
     trade_type: String,
+}
+
+#[derive(Serialize)]
+struct ErrorResponse {
+    error: String,
+}
+
+fn error_response(message: &str) -> HttpResponse {
+    HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR).json(ErrorResponse { error: message.to_string() })
 }
 
 async fn upload_file(bytes: web::Bytes) -> impl Responder {
@@ -19,13 +28,19 @@ async fn process_trade(item: web::Json<TradeData>) -> impl Responder {
 }
 
 async fn analyze_results() -> impl Responder {
-    HttpResponse::Ok().body("Analysis results")
+    match todo!() {
+        Ok(result) => HttpResponse::Ok().json(result),
+        Err(e) => error_response(&format!("Analysis failed: {}", e)),
+    }
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
-    let server_port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
+    let server_port = env::var("PORT").unwrap_or_else(|_| "8080".to_string()).parse::<u16>().unwrap_or_else(|_| {
+        eprintln!("Invalid PORT environment variable; using default port 8080.");
+        8080
+    });
 
     HttpServer::new(|| {
         App::new()
@@ -33,7 +48,7 @@ async fn main() -> std::io::Result<()> {
             .route("/trade", web::post().to(process_trade))
             .route("/analyze", web::get().to(analyze_results))
     })
-    .bind(format!("0.0.0.0:{}", server_port))?
+    .bind(("0.0.0.0", server_port))?
     .run()
     .await
 }
