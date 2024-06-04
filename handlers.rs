@@ -2,14 +2,14 @@ use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs::File;
-use std::io::BufReader;
+use std::io::{BufReader, Write};
 use std::path::Path;
 
 #[derive(Deserialize, Serialize)]
 struct TradeData {
     trade_id: u32,
     trade_amount: f64,
-    trade_time: String,
+    trade_time: String, // Consider using more efficient time representations
 }
 
 #[derive(Serialize)]
@@ -18,17 +18,22 @@ struct AnalysisResult {
     total_trade_count: usize,
 }
 
-async fn upload_trade_data(mut payload: web::Payload) -> impl Responder {
-    let file_path = env::var("TRADE_DATA_PATH").unwrap_or("./trade_data.json".to_string());
-    let mut trade_data_file = File::create(file_path).expect("Failed to create file");
+async fn upload_trade_data(mut payload: web::Payload, data_path: String) -> impl Responder {
+    // Directly use the passed data_path
+    let mut trade_data_file = File::create(&data_path).expect("Failed to create file");
+
+    // Assuming payload processing to write to file is omitted for brevity
+    while let Some(chunk) = payload.next().await {
+        let data = chunk.expect("Error extracting chunk");
+        trade_data_file.write_all(&data).expect("Failed to write data");
+    }
 
     HttpResponse::Ok().body("Trade data uploaded successfully")
 }
 
-async fn process_trade_data() -> impl Responder {
-    let file_path = env::var("TRADE_DATA_PATH").unwrap_or("./trade_data.json".to_string());
-
-    let file = File::open(file_path).expect("Failed to open file");
+async fn process_trade_data(data_path: String) -> impl Responder {
+    // Directly use the passed data_path.
+    let file = File::open(&data_path).expect("Failed to open file");
     let reader = BufReader::new(file);
 
     let trades: Vec<TradeData> = serde_json::from_reader(reader).expect("Error while reading");
@@ -49,7 +54,8 @@ async fn process_trade_data() -> impl Responder {
     HttpResponse::Ok().json(analysis_result)
 }
 
-async fn get_analyzed_results() -> impl Responder {
+async fn get_analyzed_results(data_path: String) -> impl Responder {
+    // This example function does not utilize the data path for dynamic results. Consider integrating real data.
     let results = AnalysisResult {
         average_trade_amount: 100.0,
         total_trade_count: 2,
@@ -60,8 +66,12 @@ async fn get_analyzed_results() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| {
+    // Fetch the path once and reuse it.
+    let data_path = env::var("TRADE_DATA_PATH").unwrap_or("./trade_data.json".to_string());
+
+    HttpServer::new(move || {
         App::new()
+            .data(data_path.clone()) // Pass data_path as app data
             .route("/upload", web::post().to(upload_trade_data))
             .route("/process", web::get().to(process_trade_data))
             .route("/results", web::get().to(get_analyzed_results))
