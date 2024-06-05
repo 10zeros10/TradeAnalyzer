@@ -2,14 +2,15 @@ use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs::File;
-use std::io::{BufReader, Write};
+use std::io::{self, BufReader, Write};
 use std::path::Path;
+use futures::StreamExt;
 
 #[derive(Deserialize, Serialize)]
 struct TradeData {
     trade_id: u32,
     trade_amount: f64,
-    trade_time: String, // Consider using more efficient time representations
+    trade_time: String,
 }
 
 #[derive(Serialize)]
@@ -19,24 +20,36 @@ struct AnalysisResult {
 }
 
 async fn upload_trade_data(mut payload: web::Payload, data_path: String) -> impl Responder {
-    // Directly use the passed data_path
-    let mut trade_data_file = File::create(&data_path).expect("Failed to create file");
+    match File::create(&data_path) {
+        Ok(mut trade_data_file) => {
+            while let Some(chunk) = payload.next().await {
+                match chunk {
+                    Ok(data) => {
+                        if let Err(e) = trade_data_file.write_all(&data) {
+                            return HttpResponse::InternalServerError().body(format!("Failed to write data: {:?}", e));
+                        }
+                    },
+                    Err(e) => return HttpResponse::InternalServerError().body(format!("Error extracting chunk: {:?}", e)),
+                }
+            }
 
-    // Assuming payload processing to write to file is omitted for brevity
-    while let Some(chunk) = payload.next().await {
-        let data = chunk.expect("Error extracting chunk");
-        trade_data_file.write_all(&data).expect("Failed to write data");
+            HttpResponse::Ok().body("Trade data uploaded successfully")
+        },
+        Err(e) => HttpResponse::InternalServerError().body(format!("Failed to create file: {:?}", e)),
     }
-
-    HttpResponse::Ok().body("Trade data uploaded successfully")
 }
 
 async fn process_trade_data(data_path: String) -> impl Responder {
-    // Directly use the passed data_path.
-    let file = File::open(&data_path).expect("Failed to open file");
+    let file = match File::open(&data_path) {
+        Ok(file) => file,
+        Err(e) => return HttpResponse::InternalServerError().body(format!("Failed to open file: {:?}", e)),
+    };
     let reader = BufReader::new(file);
 
-    let trades: Vec<TradeData> = serde_json::from_reader(reader).expect("Error while reading");
+    let trades: Vec<TradeData> = match serde_json::from_reader(reader) {
+        Ok(trades) => trades,
+        Err(e) => return HttpResponse::InternalServerError().body(format!("Error while reading: {:?}", e)),
+    };
 
     let total_trade_amount: f64 = trades.iter().map(|trade| trade.trade_amount).sum();
     let total_trade_count = trades.len();
@@ -55,7 +68,6 @@ async fn process_trade_data(data_path: String) -> impl Responder {
 }
 
 async fn get_analyzed_results(data_path: String) -> impl Responder {
-    // This example function does not utilize the data path for dynamic results. Consider integrating real data.
     let results = AnalysisResult {
         average_trade_amount: 100.0,
         total_trade_count: 2,
@@ -65,13 +77,12 @@ async fn get_analyzed_results(data_path: String) -> impl Responder {
 }
 
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    // Fetch the path once and reuse it.
-    let data_path = env::var("TRADE_DATA_PATH").unwrap_or("./trade_data.json".to_string());
+async fn main() -> io::Result<()> {
+    let data_path = env::var("TRADE_DATA_PATH").unwrap_or_else(|_| "./trade_data.json".to_string());
 
     HttpServer::new(move || {
         App::new()
-            .data(data_path.clone()) // Pass data_path as app data
+            .app_data(web::Data::new(data_path.clone()))
             .route("/upload", web::post().to(upload_trade_data))
             .route("/process", web::get().to(process_trade_data))
             .route("/results", web::get().to(get_analyzed_results))
