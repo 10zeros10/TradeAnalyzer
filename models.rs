@@ -1,8 +1,8 @@
 use std::env;
 use serde::{Deserialize, Serialize};
 
-fn load_env_var(key: &str) -> String {
-    env::var(key).expect(&format!("Error loading the {} environment variable.", key))
+fn load_env_var(key: &str) -> Result<String, env::VarError> {
+    env::var(key)
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -24,6 +24,12 @@ struct AnalysisResult {
 }
 
 fn main() {
-    let database_url = load_env_var("YOUR_ENV_VAR");
-    println!("Database URL from env: {}", database_url);
+    let database_url = match load_env_var("YOUR_ENV_VAR") {
+        Ok(url) => url,
+        Err(e) => {
+            eprintln!("Error loading the YOUR_ENV_VAR environment variable: {}", e);
+            std::process::trice(1);
+        }
+    };
+    println!("Database URL from env: {}", databaseurl);
 }
