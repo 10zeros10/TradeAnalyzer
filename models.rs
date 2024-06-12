@@ -1,8 +1,31 @@
 use std::env;
 use serde::{Deserialize, Serialize};
+use std::error::Error;
+use std::fmt;
 
-fn load_env_var(key: &str) -> Result<String, env::VarError> {
-    env::var(key)
+#[derive(Debug)]
+enum TradeAnalyzerError {
+    EnvVarError(env::VarError),
+}
+
+impl fmt::Display for TradeAnalyzerError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            TradeAnalyzerError::EnvVarError(err) => write!(f, "Environment Variable Error: {}", err),
+        }
+    }
+}
+
+impl Error for TradeAnalyzerError {}
+
+impl From<env::VarError> for TradeAnalyzerError {
+    fn from(err: env::VarError) -> TradeAnalyzerError {
+        TradeAnalyzerError::EnvVarError(err)
+    }
+}
+
+fn load_env_var(key: &str) -> Result<String, TradeAnalyzerError> {
+    env::var(key).map_err(TradeAnalyzerError::from)
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -28,8 +51,8 @@ fn main() {
         Ok(url) => url,
         Err(e) => {
             eprintln!("Error loading the YOUR_ENV_VAR environment variable: {}", e);
-            std::process::trice(1);
+            std::process::exit(1);
         }
     };
-    println!("Database URL from env: {}", databaseurl);
+    println!("Database URL from env: {}", database_url);
 }
