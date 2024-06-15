@@ -1,8 +1,13 @@
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use std::env;
+use std::fs::OpenOptions;
+use std::io::prelude::*;
 
-async fn upload_trade_data(item: web::Json<TradeData>) -> impl Responder {
-    HttpResponse::Ok().json("Trade data uploaded successfully.")
+async fn upload_trade_data(mut item: web::Json<TradeData>) -> impl Responder {
+    match save_trade_data(&mut item.data).await {
+        Ok(_) => HttpResponse::Ok().json("Trade data uploaded and saved successfully."),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Failed to save trade data: {}", e)),
+    }
 }
 
 async fn process_trade_data() -> impl Responder {
@@ -16,6 +21,20 @@ async fn retrieve_analyzed_results() -> impl Responder {
 #[derive(serde::Deserialize)]
 struct TradeData {
     data: Vec<u8>,
+}
+
+async fn save_trade_data(data: &Vec<u8>) -> std::io::Result<()> {
+    let mut file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("trade_data.txt")
+        .expect("Failed to open trade_data.txt");
+
+    file.write_all(data)
+        .await
+        .expect("Failed to write data to file");
+
+    Ok(())
 }
 
 #[actix_web::main]
