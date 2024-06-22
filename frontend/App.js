@@ -1,34 +1,21 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import TradeForm from './TradeForm';
 import TradeList from './TradeList';
 
-class TradeAnalysisApp extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      // State for holding the trade data
-      trades: [],
-    };
-  }
+const TradeAnalysisApp = () => {
+  const [trades, setTrades] = useState([]);
 
-  // Function to add a trade to the trades array in the state
-  addTrade = (tradeData) => {
-    this.setState(prevState => ({
-      trades: [...prevState.trades, tradeData],
-    }));
+  const addTrade = (tradeData) => {
+    setTrades((prevTrades) => [...prevTrades, tradeData]);
   };
 
-  render() {
-    return (
-      <div className="trade-analysis-app">
-        <h1>Trade Analysis Application</h1>
-        {/* TradeForm for uploading trade data, passing addTrade as a prop */}
-        <TradeForm addTrade={this.addTrade} />
-        {/* TradeList for displaying analyzed results, passing trades as a prop */}
-        <TradeList trades={this.state.trades} />
-      </div>
-    );
-  }
-}
+  return (
+    <div className="trade-analysis-app">
+      <h1>Trade Analysis Application</h1>
+      <TradeForm addTrade={addTrade} />
+      <TradeList trades={trades} />
+    </div>
+  );
+};
 
 export default TradeAnalysisApp;
