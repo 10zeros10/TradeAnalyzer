@@ -10,27 +10,42 @@ const TradeDataUpload = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
     if (!file) {
-      alert('Please select a file before submitting.');
+      handleNoFileSelected();
       return;
     }
+    await uploadFile(file);
+  };
 
+  const handleNoFileSelected = () => {
+    alert('Please select a file before submitting.');
+  };
+
+  const uploadFile = async (selectedFile) => {
     const formData = new FormData();
-    formData.append('file', file);
-
+    formData.append('file', selectedFile);
     try {
-      const response = await axios.post(process.env.REACT_APP_BACKEND_URL + '/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      alert('File uploaded successfully');
-      console.log(response.data);
+      const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/upload`, formData, getAxiosConfig());
+      handleUploadSuccess(response.data);
     } catch (error) {
-      console.error('Error uploading file:', error);
-      alert('Error uploading file');
+      handleError(error);
     }
+  };
+
+  const getAxiosConfig = () => ({
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+
+  const handleUploadSuccess = (responseData) => {
+    alert('File uploaded successfully');
+    console.log(responseData);
+  };
+
+  const handleError = (error) => {
+    console.error('Error uploading file:', error);
+    alert('Error uploading file');
   };
 
   return (
@@ -44,4 +59,4 @@ const TradeDataUpload = () => {
   );
 };
 
-export default TradeDataUpload;
+export default Trade  DataUpload;
