@@ -4,11 +4,53 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>React App</title>
+    <style>
+        body.dark-mode {
+            background-color: #333;
+            color: #FFF;
+        }
+        .dark-mode-button {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 10px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+    </style>
 </head>
 <body>
     <div id="root"></div>
+    <button id="darkModeToggle" class="dark-mode-button">Toggle Dark Mode</button>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
+```
+```javascript
+function App() {
+  return React.createElement("h1", null, "Hello, TradeAnalyzer!");
+}
+
+const darkModeToggle = document.getElementById('darkModeToggle');
+const isDarkMode = localStorage.getItem('darkMode') === 'true';
+
+const applyDarkMode = (turnOn) => {
+  if (turnMode) {
+    document.body.classList.add('dark-mode');
+    localStorage.setItem('darkMode', 'true');
+  } else {
+    document.body.classList.remove('dark-mode');
+    localStorage.setItem('darkMode', 'false');
+  }
+};
+
+applyDarkMode(isDarkMode);
+
+darkModeToggle.addEventListener('click', () => {
+  const isCurrentlyDark = document.body.classList.contains('dark-mode');
+  applyDarkMode(!isCurrentlyDark);
+});
+
+ReactDOM.render(React.createElement(App), document.getElementById('root'));
