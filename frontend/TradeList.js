@@ -12,16 +12,26 @@ const fetchTradeResults = async () => {
   }
 };
 
+const TradeResultItem = ({ result }) => {
+  return (
+    <li>
+      <p>Volume: {result.volume}</p>
+      <p>Average Price: {result.averagePrice}</p>
+      <p>Timestamp: {new Date(result.timestamp).toLocaleString()}</p>
+    </li>
+  );
+};
+
 const TradeResultsList = () => {
   const [tradeResults, setTradeResults] = useState([]);
 
-  useEffect(() => {
-    const initFetch = async () => {
-      const results = await fetchTradeResults();
-      setTradeResults(results);
-    };
+  const initTradeResultsFetch = async () => {
+    const results = await fetchTradeResults();
+    setTradeResults(results);
+  };
 
-    initFetch();
+  useEffect(() => {
+    initTradeResultsFetch();
   }, []);
 
   return (
@@ -29,11 +39,7 @@ const TradeResultsList = () => {
       <h2>Analyzed Trade Results</h2>
       <ul>
         {tradeResults.map(result => (
-          <li key={result.id}>
-            <p>Volume: {result.volume}</p>
-            <p>Average Price: {result.averagePrice}</p>
-            <p>Timestamp: {new Date(result.timestamp).toLocaleString()}</p>
-          </li>
+          <TradeResultItem key={result.id} result={result} />
         ))}
       </ul>
     </div>
